@@ -72,6 +72,21 @@ describe("Keystore", function() {
       });
     });
 
+    it('Should not have Bitcore bip32 derivation bug', function (done) {
+      var fixture = fixtures.valid[0];
+      keyStore.createVault({
+        password: fixture.password,
+        seedPhrase: 'surface poem manual curve size banner truly just object soup inhale craft',
+        salt: fixture.salt,
+      }, function (err, ks) {
+        if (err) return done(err)
+        expect(ks.ksData[ks.defaultHdPathString].encHdPathPriv).to.not.equal(undefined);
+        var decrypted = keyStore._decryptString(ks.ksData[ks.defaultHdPathString].encHdPathPriv, Uint8Array.from(fixture.pwDerivedKey));
+        expect(decrypted.trim()).to.equal('xprv9ya1rxvpVE6meZuTkje4kCsCygwxL4biTMoDYsJZta5j1g8iMMPDvmEChy3Cq5V1fUyhiQjnUK8ooaXc5rqpsqoQZcMWKFy1KCpnTmgXgKC');
+        done();
+      });
+    });
+
     it('generates a random salt for key generation', function(done) {
       this.timeout(10000);
       var fixture = fixtures.valid[0];
@@ -508,6 +523,21 @@ describe("Keystore", function() {
       done();
     })
 
+    it('Should not have Bitcore bip32 derivation bug', function () {
+      var pw = Uint8Array.from(fixtures.valid[0].pwDerivedKey);
+      var ks = new keyStore('surface poem manual curve size banner truly just object soup inhale craft', pw);
+      var hdPath = "m/0'/0'/1'";
+      ks.addHdDerivationPath(hdPath, pw, {curve: 'secp256k1', purpose: 'sign'});
+      ks.generateNewAddress(pw, 5, hdPath);
+      var addresses = ks.getAddresses(hdPath);
+      expect(addresses).to.deep.equal([
+        "b38beead30c661f5f1026724525e7eedd78d8849",
+        "0f4fec8229b20e665ed7403341cc341bbe12cd53",
+        "ce9e429376d9f3652c1c545531f9a5cada6eea55",
+        "920112c616bf4403109b2b905dc034979568e8cb",
+        "f29fb4cb3d0515ff8956fd6e993293202264a83d"
+      ]);
+    });
   });
 
 });
